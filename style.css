@@ -1,13 +1,12 @@
 /* Neon Arcade Premium - Global Styles */
 body {
-    background-color: #0f172a; /* Deep slate/midnight background */
-    color: #f8fafc; /* Crisp white text */
+    background-color: #0f172a; 
+    color: #f8fafc; 
     font-family: sans-serif;
     text-align: center;
     margin: 0;
     padding: 20px;
     
-    /* These commands center everything perfectly on the screen */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -17,14 +16,14 @@ body {
 }
 
 h1 {
-    color: #10b981; /* Glowing emerald green for our title */
-    text-shadow: 0 0 10px rgba(16, 185, 129, 0.7); /* The neon glow effect */
+    color: #10b981; 
+    text-shadow: 0 0 10px rgba(16, 185, 129, 0.7); 
 }
 
 /* Button Styling */
 button {
-    background-color: #10b981; /* Neon emerald */
-    color: #0f172a; /* Dark text for contrast */
+    background-color: #10b981; 
+    color: #0f172a; 
     border: none;
     padding: 15px 30px;
     font-size: 1.2rem;
@@ -32,5 +31,5 @@ button {
     border-radius: 8px;
     cursor: pointer;
     margin-top: 20px;
-    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); /* Glowing effect */
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); 
 }
