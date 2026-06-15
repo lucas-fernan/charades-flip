@@ -33,3 +33,10 @@ button {
     margin-top: 20px;
     box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); 
 }
+
+/* Word Display Styling */
+#word-display {
+    font-size: 3rem;
+    margin: 40px 0;
+    color: #f8fafc; /* Keep it crisp white to contrast the green title */
+}
