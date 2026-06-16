@@ -82,7 +82,24 @@ button {
 }
 
 
+/* Topic Input Styling */
+#topic-input {
+    padding: 15px;
+    font-size: 1.2rem;
+    border-radius: 8px;
+    border: 2px solid #10b981;
+    background-color: #0f172a;
+    color: #f8fafc;
+    margin-bottom: 20px;
+    text-align: center;
+    width: 80%;
+    max-width: 300px;
+    outline: none;
+}
 
+#topic-input:focus {
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.7);
+}
 
 
 
