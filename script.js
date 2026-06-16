@@ -8,18 +8,18 @@ let timeLeft = 60;
 let timerInterval;
 let isPlaying = false;
 
-// Tilt State Locks
-let tiltLocked = false; 
+// 👉 NEW GAME DESIGN: State Machine ("neutral", "correct", "pass")
+let tiltState = "neutral"; 
 
 async function startGame(event) {
     event.stopPropagation(); 
     
-    // 👉 SAFARI FIX: We must ask for permission instantly on the very first line of the click!
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    // Request permission for the GRAVITY sensor (DeviceMotion)
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
         try {
-            const permissionState = await DeviceOrientationEvent.requestPermission();
+            const permissionState = await DeviceMotionEvent.requestPermission();
             if (permissionState !== 'granted') {
-                alert("Gyroscope denied. You must tap the screen to play.");
+                alert("Gravity sensor denied. Tap the screen to play.");
             }
         } catch (error) {
             console.error(error);
@@ -27,9 +27,10 @@ async function startGame(event) {
     }
 
     document.getElementById("start-btn").style.display = "none";
-    document.body.classList.add("playing"); // This activates our landscape warning CSS!
+    document.body.classList.add("playing"); // This activates the landscape CSS rule!
 
-    window.addEventListener("deviceorientation", handleOrientation, true);
+    // Attach the new gravity listener
+    window.addEventListener("devicemotion", handleMotion, true);
     
     if (wordPool.length < 5) {
         document.getElementById("word-display").innerText = "Stockpiling AI Words...";
@@ -48,7 +49,7 @@ async function startGame(event) {
     score = 0;
     timeLeft = 60;
     isPlaying = true;
-    tiltLocked = false;
+    tiltState = "neutral";
     
     document.getElementById("score").innerText = score;
     document.getElementById("time").innerText = timeLeft;
@@ -58,49 +59,40 @@ async function startGame(event) {
     timerInterval = setInterval(countdown, 1000);
 }
 
-function handleOrientation(event) {
+function handleMotion(event) {
     if (!isPlaying) return;
 
-    // 👉 LANDSCAPE MATH FIX: Calculate front-to-back tilt based on how the phone is rotated
-    let tilt;
-    let orientation = window.orientation || screen.orientation?.angle || 0;
-    
-    if (orientation === 90) tilt = event.gamma;        // Sideways Right
-    else if (orientation === -90) tilt = -event.gamma; // Sideways Left
-    else tilt = event.beta;                            // Portrait
-    
-    // Safety check: if no sensor data, exit
-    if (!tilt) return;
+    // Grab the Z-Axis Gravity
+    let z = event.accelerationIncludingGravity?.z;
+    if (z === undefined || z === null) return;
 
-    // 👉 TILT UP = CORRECT (+1 Point)
-    if (tilt > 120 && !tiltLocked) {
-        tiltLocked = true;
-        score++;
-        document.getElementById("score").innerText = score;
-        document.body.style.backgroundColor = "#15803d"; // Flash Green
-        
-        // HAPTICS: One clean buzz for correct
-        if (navigator.vibrate) navigator.vibrate(200); 
-        
-        setTimeout(() => { document.body.style.backgroundColor = ""; }, 400);
-        pullRandomWord();
+    // Gravity Math: 0 is vertical. Negative is face down. Positive is face up.
+    const TILT_DOWN = -5; // Forgiving target for Correct
+    const TILT_UP = 5;    // Forgiving target for Skip
+    const NEUTRAL_MAX = 3; // Huge deadzone to prevent accidental triggers
+    const NEUTRAL_MIN = -3;
+
+    if (tiltState === "neutral") {
+        // Did they tilt to the floor?
+        if (z < TILT_DOWN) {
+            tiltState = "correct";
+            score++;
+            document.getElementById("score").innerText = score;
+            document.body.style.backgroundColor = "#15803d"; // Flash Green
+        } 
+        // Did they tilt to the ceiling?
+        else if (z > TILT_UP) {
+            tiltState = "pass";
+            document.body.style.backgroundColor = "#b91c1c"; // Flash Red
+        }
     } 
-    
-    // 👉 TILT DOWN = SKIP (No Points)
-    else if (tilt < 60 && !tiltLocked) {
-        tiltLocked = true;
-        document.body.style.backgroundColor = "#b91c1c"; // Flash Red
-        
-        // HAPTICS: Double-buzz for skip
-        if (navigator.vibrate) navigator.vibrate([100, 100, 100]); 
-        
-        setTimeout(() => { document.body.style.backgroundColor = ""; }, 400);
-        pullRandomWord();
-    } 
-    
-    // UNLOCK: Return to forehead (~90 degrees) to unlock the next word
-    else if (tilt > 75 && tilt < 105 && tiltLocked) {
-        tiltLocked = false; 
+    // If they already answered, wait for them to return to the forehead
+    else if (tiltState === "correct" || tiltState === "pass") {
+        if (z > NEUTRAL_MIN && z < NEUTRAL_MAX) {
+            tiltState = "neutral";
+            document.body.style.backgroundColor = "#0f172a"; // Reset background
+            pullRandomWord(); // 👉 THE UX FIX: Load next word ONLY upon returning to forehead!
+        }
     }
 }
 
@@ -129,13 +121,13 @@ function pullRandomWord() {
 
 function endGame() {
     isPlaying = false;
-    document.body.classList.remove("playing"); // Remove landscape warning
+    document.body.classList.remove("playing"); // Turn off warning
     clearInterval(timerInterval);
-    window.removeEventListener("deviceorientation", handleOrientation, true);
+    window.removeEventListener("devicemotion", handleMotion, true);
     
     document.getElementById("word-display").innerText = "Time's Up! Score: " + score;
     document.getElementById("start-btn").innerText = `Play Again (${wordPool.length} cached)`;
     document.getElementById("start-btn").style.display = "inline-block";
     document.getElementById("hud").style.display = "none";
-    document.body.style.backgroundColor = "";
+    document.body.style.backgroundColor = "#0f172a";
 }
