@@ -1,0 +1,8 @@
+{
+  "name": "Charades Flip",
+  "short_name": "Charades",
+  "display": "fullscreen",
+  "background_color": "#0f172a",
+  "theme_color": "#10b981",
+  "orientation": "landscape"
+}
