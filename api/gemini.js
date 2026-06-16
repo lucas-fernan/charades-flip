@@ -11,10 +11,10 @@ export default async function handler(req, res) {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) return res.status(500).json({ error: "Missing API Key" });
 
-        // 👉 THE UPGRADE: We are now asking for 50 words!
+        // Requesting 50 words for our smart local pool
         const prompt = "Give me a comma-separated list of 50 random, fun charades words. Only return the words, nothing else.";
 
-        // 👉 THE MODEL: Confirming we are using the 500-request-per-day 3.1 Flash Lite model
+        // Powered by Gemini 3.1 Flash Lite (500 free requests per day)
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
