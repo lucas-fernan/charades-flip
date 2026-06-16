@@ -1,12 +1,16 @@
 // 1. Your secure proxy link. Replace the middle part with your Vercel URL!
 const PROXY_URL = "https://charades-flip.vercel.app/api/gemini";
 
+
 let wordPool = []; 
 let score = 0;
 let timeLeft = 60;
 let timerInterval;
 let isPlaying = false;
 let tiltState = "neutral"; 
+
+// 👉 NEW: The variable that holds our smoothed shock-absorber data
+let smoothedZ = 0; 
 
 async function startGame(event) {
     event.stopPropagation(); 
@@ -18,12 +22,9 @@ async function startGame(event) {
         } catch (error) { console.error(error); }
     }
 
-    // Hide UI elements during loading
     document.getElementById("start-btn").style.display = "none";
     document.getElementById("topic-input").style.display = "none";
     
-    // 👉 BUG FIX: Notice we REMOVED the landscape warning trigger from here!
-
     window.addEventListener("devicemotion", handleMotion, true);
     
     const userTopic = document.getElementById("topic-input").value;
@@ -39,21 +40,19 @@ async function startGame(event) {
         const data = await response.json();
         wordPool = data.words.split(','); 
     } catch (error) {
-        // If the AI fails, we cleanly restore the Start screen without triggering landscape mode!
         document.getElementById("word-display").innerText = "AI Connection Failed! Check URL.";
         document.getElementById("start-btn").style.display = "inline-block";
         document.getElementById("topic-input").style.display = "inline-block";
-        console.error("AI Fetch Error:", error);
         return; 
     }
     
-    // 👉 BUG FIX: We only trigger the landscape warning IF we make it down here safely!
     document.body.classList.add("playing"); 
     
     score = 0;
     timeLeft = 60;
     isPlaying = true;
     tiltState = "neutral";
+    smoothedZ = 0; // Reset our shock absorber for the new game
     
     document.getElementById("score").innerText = score;
     document.getElementById("time").innerText = timeLeft;
@@ -65,26 +64,32 @@ async function startGame(event) {
 
 function handleMotion(event) {
     if (!isPlaying) return;
-    let z = event.accelerationIncludingGravity?.z;
-    if (z === undefined || z === null) return;
+    
+    // Grab the raw, jerky data from the hardware
+    let rawZ = event.accelerationIncludingGravity?.z;
+    if (rawZ === undefined || rawZ === null) return;
+
+    // 👉 THE LOW-PASS FILTER: 80% Old Steady Position + 20% New Raw Data
+    smoothedZ = (smoothedZ * 0.8) + (rawZ * 0.2);
 
     const TILT_DOWN = -5; 
     const TILT_UP = 5;    
     const NEUTRAL_MAX = 3; 
     const NEUTRAL_MIN = -3;
 
+    // Notice we are now using smoothedZ to make our decisions, NOT rawZ!
     if (tiltState === "neutral") {
-        if (z < TILT_DOWN) {
+        if (smoothedZ < TILT_DOWN) {
             tiltState = "correct";
             score++;
             document.getElementById("score").innerText = score;
             document.body.style.backgroundColor = "#15803d"; 
-        } else if (z > TILT_UP) {
+        } else if (smoothedZ > TILT_UP) {
             tiltState = "pass";
             document.body.style.backgroundColor = "#b91c1c"; 
         }
     } else if (tiltState === "correct" || tiltState === "pass") {
-        if (z > NEUTRAL_MIN && z < NEUTRAL_MAX) {
+        if (smoothedZ > NEUTRAL_MIN && smoothedZ < NEUTRAL_MAX) {
             tiltState = "neutral";
             document.body.style.backgroundColor = "#0f172a"; 
             pullRandomWord(); 
