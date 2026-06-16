@@ -62,20 +62,22 @@ button {
 
 /* Landscape Warning Overlay */
 #landscape-warning {
-    display: none; /* Hidden by default */
+    display: none; 
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(15, 23, 42, 0.95);
+    background-color: #0f172a; /* Solid background to completely hide the game */
     z-index: 9999;
     align-items: center;
     justify-content: center;
     color: #f59e0b;
+    font-size: 2rem;
+    text-align: center;
 }
 
-/* If the body has the 'playing' class AND the phone is in portrait mode, show the warning! */
+/* 👉 THE SAFARI FIX: Force display if portrait, ignoring everything else */
 @media screen and (orientation: portrait) {
-    body.playing #landscape-warning {
-        display: flex;
+    #landscape-warning {
+        display: flex !important;
     }
 }
 
