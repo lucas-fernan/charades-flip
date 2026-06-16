@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Charades">
     
-    <link rel="stylesheet" href="style.css?v=12">
+    <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body onclick="tapScreen()">
     
@@ -24,12 +24,29 @@
         <div class="stat-box">SCORE: <span id="score">0</span></div>
     </div>
 
-    <input type="text" id="topic-input" placeholder="Type a topic (e.g. Movies)">
+    <div id="setup-controls">
+        <input type="text" id="topic-input" placeholder="Type a topic (e.g. Movies)">
+        
+        <select id="time-input">
+            <option value="1">1 Minute</option>
+            <option value="2">2 Minutes</option>
+            <option value="3">3 Minutes</option>
+            <option value="4">4 Minutes</option>
+            <option value="5">5 Minutes</option>
+            <option value="6">6 Minutes</option>
+            <option value="7">7 Minutes</option>
+            <option value="8">8 Minutes</option>
+            <option value="9">9 Minutes</option>
+            <option value="10">10 Minutes</option>
+        </select>
+    </div>
 
     <h2 id="word-display">Ready to play?</h2>
     
     <button id="start-btn" onclick="startGame(event)">Start Game</button>
+    
+    <button id="end-btn" onclick="forceEndGame(event)" style="display: none;">End Game</button>
 
-    <script src="script.js?v=12"></script>
+    <script src="script.js?v=13"></script>
 </body>
 </html>
