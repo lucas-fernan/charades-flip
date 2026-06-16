@@ -65,7 +65,7 @@ button {
     display: none; 
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background-color: #0f172a; /* Solid background to completely hide the game */
+    background-color: #0f172a; 
     z-index: 9999;
     align-items: center;
     justify-content: center;
@@ -74,13 +74,12 @@ button {
     text-align: center;
 }
 
-/* 👉 THE SAFARI FIX: Force display if portrait, ignoring everything else */
+/* 👉 ONLY show the warning if the game is 'playing' AND the phone is vertical */
 @media screen and (orientation: portrait) {
-    #landscape-warning {
+    body.playing #landscape-warning {
         display: flex !important;
     }
 }
-
 
 
 
