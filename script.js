@@ -2,41 +2,37 @@
 const PROXY_URL = "https://charades-flip.vercel.app/api/gemini";
 
 
-// Game State Variables
 let wordPool = []; 
 let score = 0;
 let timeLeft = 60;
 let timerInterval;
 let isPlaying = false;
 
-// 🔄 Tilt Control State Locks
+// Tilt State Locks
 let tiltLocked = false; 
-const TILT_CORRECT_THRESHOLD = 60; // Tilt down below 60 degrees
-const TILT_PASS_THRESHOLD = 120;   // Tilt up above 120 degrees
-const RESET_THRESHOLD_MIN = 75;    // Must return between 75-105 to unlock
-const RESET_THRESHOLD_MAX = 105;
 
 async function startGame(event) {
     event.stopPropagation(); 
-    document.getElementById("start-btn").style.display = "none";
     
-    // Request permission for iPhone/iOS sensors if required
+    // 👉 SAFARI FIX: We must ask for permission instantly on the very first line of the click!
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         try {
             const permissionState = await DeviceOrientationEvent.requestPermission();
             if (permissionState !== 'granted') {
-                alert("Permission to use gyroscope was denied. Game will fall back to screen taps.");
+                alert("Gyroscope denied. You must tap the screen to play.");
             }
         } catch (error) {
-            console.error("Sensor initialization error:", error);
+            console.error(error);
         }
     }
 
-    // Activate the digital gyroscope listener
+    document.getElementById("start-btn").style.display = "none";
+    document.body.classList.add("playing"); // This activates our landscape warning CSS!
+
     window.addEventListener("deviceorientation", handleOrientation, true);
     
     if (wordPool.length < 5) {
-        document.getElementById("word-display").innerText = "Stockpiling 50 AI Words...";
+        document.getElementById("word-display").innerText = "Stockpiling AI Words...";
         try {
             const response = await fetch(PROXY_URL);
             const data = await response.json();
@@ -62,35 +58,49 @@ async function startGame(event) {
     timerInterval = setInterval(countdown, 1000);
 }
 
-// 📱 Gyroscope Processing Loop
 function handleOrientation(event) {
     if (!isPlaying) return;
 
-    // Grab the beta angle (front-to-back tilt)
-    let beta = event.beta; 
-    if (!beta) return;
+    // 👉 LANDSCAPE MATH FIX: Calculate front-to-back tilt based on how the phone is rotated
+    let tilt;
+    let orientation = window.orientation || screen.orientation?.angle || 0;
+    
+    if (orientation === 90) tilt = event.gamma;        // Sideways Right
+    else if (orientation === -90) tilt = -event.gamma; // Sideways Left
+    else tilt = event.beta;                            // Portrait
+    
+    // Safety check: if no sensor data, exit
+    if (!tilt) return;
 
-    // Check for a TILT DOWN (Correct)
-    if (beta < TILT_CORRECT_THRESHOLD && !tiltLocked) {
-        tiltLocked = true; // Snap lock shut
+    // 👉 TILT UP = CORRECT (+1 Point)
+    if (tilt > 120 && !tiltLocked) {
+        tiltLocked = true;
         score++;
         document.getElementById("score").innerText = score;
-        document.body.style.backgroundColor = "#15803d"; // Flash Green briefly
+        document.body.style.backgroundColor = "#15803d"; // Flash Green
+        
+        // HAPTICS: One clean buzz for correct
+        if (navigator.vibrate) navigator.vibrate(200); 
+        
         setTimeout(() => { document.body.style.backgroundColor = ""; }, 400);
         pullRandomWord();
     } 
     
-    // Check for a TILT UP (Pass)
-    else if (beta > TILT_PASS_THRESHOLD && !tiltLocked) {
-        tiltLocked = true; // Snap lock shut
-        document.body.style.backgroundColor = "#b91c1c"; // Flash Red briefly
+    // 👉 TILT DOWN = SKIP (No Points)
+    else if (tilt < 60 && !tiltLocked) {
+        tiltLocked = true;
+        document.body.style.backgroundColor = "#b91c1c"; // Flash Red
+        
+        // HAPTICS: Double-buzz for skip
+        if (navigator.vibrate) navigator.vibrate([100, 100, 100]); 
+        
         setTimeout(() => { document.body.style.backgroundColor = ""; }, 400);
         pullRandomWord();
     } 
     
-    // UNLOCK MECHANISM: Has the player returned the phone to their forehead upright?
-    else if (beta > RESET_THRESHOLD_MIN && beta < RESET_THRESHOLD_MAX && tiltLocked) {
-        tiltLocked = false; // Release the lock for the next word
+    // UNLOCK: Return to forehead (~90 degrees) to unlock the next word
+    else if (tilt > 75 && tilt < 105 && tiltLocked) {
+        tiltLocked = false; 
     }
 }
 
@@ -100,7 +110,6 @@ function countdown() {
     if (timeLeft <= 0) endGame();
 }
 
-// Fallback touch feature in case a desktop browser or older phone plays
 function tapScreen() {
     if (!isPlaying) return; 
     score++; 
@@ -120,8 +129,8 @@ function pullRandomWord() {
 
 function endGame() {
     isPlaying = false;
+    document.body.classList.remove("playing"); // Remove landscape warning
     clearInterval(timerInterval);
-    // Turn off the sensor to save phone battery
     window.removeEventListener("deviceorientation", handleOrientation, true);
     
     document.getElementById("word-display").innerText = "Time's Up! Score: " + score;
