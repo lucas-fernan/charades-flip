@@ -17,8 +17,8 @@ export default async function handler(req, res) {
 
         const prompt = "Give me a comma-separated list of 5 random, fun charades words. Only return the words, nothing else.";
 
-        // 👉 THE FIX: We updated "gemini-1.5-flash" to "gemini-3.5-flash" here!
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+        // 👉 THE UPGRADE: We are now using the high-limit "gemini-3.1-flash-lite" model!
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
