@@ -3,18 +3,18 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
+    if (req.method === 'OPTIONS') return res.status(200).end();
 
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) return res.status(500).json({ error: "Missing API Key" });
 
-        // Requesting 50 words for our smart local pool
-        const prompt = "Give me a comma-separated list of 50 random, fun charades words. Only return the words, nothing else.";
+        // 👉 THE UPGRADE: We read the topic from the game, or default to "random things" if left blank
+        const userTopic = req.body.topic || "random things";
 
-        // Powered by Gemini 3.1 Flash Lite (500 free requests per day)
+        // 👉 We inject your custom topic directly into the AI's instructions
+        const prompt = `Give me a comma-separated list of 50 fun charades words about: ${userTopic}. Only return the words, nothing else.`;
+
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -24,7 +24,6 @@ export default async function handler(req, res) {
         });
 
         const data = await response.json();
-        
         if (data.error) return res.status(500).json({ error: "API Error", details: data.error });
 
         const textOutput = data.candidates[0].content.parts[0].text;
