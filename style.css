@@ -59,3 +59,36 @@ button {
     color: #f59e0b; /* Glowing Neon Amber */
     box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
 }
+
+/* Landscape Warning Overlay */
+#landscape-warning {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(15, 23, 42, 0.95);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    color: #f59e0b;
+}
+
+/* If the body has the 'playing' class AND the phone is in portrait mode, show the warning! */
+@media screen and (orientation: portrait) {
+    body.playing #landscape-warning {
+        display: flex;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
