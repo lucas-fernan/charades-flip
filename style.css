@@ -40,3 +40,22 @@ button {
     margin: 40px 0;
     color: #f8fafc; /* Keep it crisp white to contrast the green title */
 }
+
+/* Arcade HUD Styling */
+#hud {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 350px;
+    margin-bottom: 30px;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.stat-box {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px 20px;
+    border-radius: 8px;
+    color: #f59e0b; /* Glowing Neon Amber */
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+}
