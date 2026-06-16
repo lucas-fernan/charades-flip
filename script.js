@@ -1,6 +1,8 @@
 // 1. Your specific Vercel Proxy URL!
 const PROXY_URL = "https://charades-flip.vercel.app/api/gemini";
 
+
+
 let wordPool = []; 
 let score = 0;
 let timeLeft = 60;
@@ -9,8 +11,6 @@ let isPlaying = false;
 let tiltState = "neutral"; 
 let smoothedZ = 0; 
 let currentTopic = ""; 
-
-// 👉 THE FIX: A flag to track if the sensor is awake
 let isSensorAttached = false; 
 
 async function startGame(event) {
@@ -27,11 +27,13 @@ async function startGame(event) {
     document.getElementById("setup-controls").style.display = "none";
     document.getElementById("end-btn").style.display = "inline-block";
     
-    // 👉 THE FIX: Wake the sensor up ONCE, and never turn it off!
     if (!isSensorAttached) {
         window.addEventListener("devicemotion", handleMotion, true);
         isSensorAttached = true;
     }
+    
+    // 🔒 NEW: Grab the password the user typed
+    const gamePassword = document.getElementById("password-input").value;
     
     const rawTopicInput = document.getElementById("topic-input").value.trim();
     const requestedTopic = rawTopicInput === "" ? "random things" : rawTopicInput;
@@ -43,14 +45,21 @@ async function startGame(event) {
             const response = await fetch(PROXY_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ topic: requestedTopic })
+                // 🔒 NEW: Send the password to Vercel
+                body: JSON.stringify({ topic: requestedTopic, password: gamePassword })
             });
             
             const data = await response.json();
+
+            // 🔒 NEW: If Vercel kicks us out, throw a "Wrong Password" error
+            if (response.status === 403 || data.error === "Access Denied: Incorrect Password.") {
+                throw new Error("Wrong Password");
+            }
+
             wordPool = data.words.split(','); 
             currentTopic = requestedTopic; 
         } catch (error) {
-            document.getElementById("word-display").innerText = "AI Connection Failed! Check URL.";
+            document.getElementById("word-display").innerText = error.message === "Wrong Password" ? "Access Denied: Wrong Password!" : "AI Connection Failed! Check URL.";
             document.getElementById("start-btn").style.display = "inline-block";
             document.getElementById("setup-controls").style.display = "flex";
             document.getElementById("end-btn").style.display = "none";
@@ -83,7 +92,6 @@ function handleMotion(event) {
 
     smoothedZ = (smoothedZ * 0.8) + (rawZ * 0.2);
 
-    // 👉 THE FIX: Expanded the thresholds for comfortable, forgiving gameplay
     const TILT_DOWN = -6.0; 
     const TILT_UP = 6.0;    
     const NEUTRAL_MAX = 4.0; 
@@ -140,8 +148,6 @@ function endGame() {
     isPlaying = false;
     document.body.classList.remove("playing"); 
     clearInterval(timerInterval);
-    
-    // 👉 THE FIX: Notice we removed the line that kills the sensor here!
     
     document.getElementById("word-display").innerText = "Game Over! Score: " + score;
     
