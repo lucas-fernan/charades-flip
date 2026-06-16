@@ -1,7 +1,6 @@
 // 1. Your secure proxy link. Replace the middle part with your Vercel URL!
 const PROXY_URL = "https://charades-flip.vercel.app/api/gemini";
 
-
 let wordPool = []; 
 let score = 0;
 let timeLeft = 60;
@@ -19,20 +18,18 @@ async function startGame(event) {
         } catch (error) { console.error(error); }
     }
 
-    // Hide UI elements during gameplay
+    // Hide UI elements during loading
     document.getElementById("start-btn").style.display = "none";
     document.getElementById("topic-input").style.display = "none";
-    document.body.classList.add("playing"); 
+    
+    // 👉 BUG FIX: Notice we REMOVED the landscape warning trigger from here!
 
     window.addEventListener("devicemotion", handleMotion, true);
     
-    // 👉 Grab what the user typed (or use 'random' if they left it blank)
     const userTopic = document.getElementById("topic-input").value;
-
     document.getElementById("word-display").innerText = "Generating AI Words...";
     
     try {
-        // 👉 Send the topic to Vercel inside a data Payload!
         const response = await fetch(PROXY_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -40,14 +37,18 @@ async function startGame(event) {
         });
         
         const data = await response.json();
-        // Overwrite the pool with fresh words from the new category!
         wordPool = data.words.split(','); 
     } catch (error) {
-        document.getElementById("word-display").innerText = "AI Connection Failed!";
+        // If the AI fails, we cleanly restore the Start screen without triggering landscape mode!
+        document.getElementById("word-display").innerText = "AI Connection Failed! Check URL.";
         document.getElementById("start-btn").style.display = "inline-block";
         document.getElementById("topic-input").style.display = "inline-block";
-        return;
+        console.error("AI Fetch Error:", error);
+        return; 
     }
+    
+    // 👉 BUG FIX: We only trigger the landscape warning IF we make it down here safely!
+    document.body.classList.add("playing"); 
     
     score = 0;
     timeLeft = 60;
@@ -122,7 +123,6 @@ function endGame() {
     
     document.getElementById("word-display").innerText = "Time's Up! Score: " + score;
     
-    // Bring the UI back for the next round
     document.getElementById("start-btn").innerText = "Play Again";
     document.getElementById("start-btn").style.display = "inline-block";
     document.getElementById("topic-input").style.display = "inline-block";
